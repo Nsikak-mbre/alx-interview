@@ -1,5 +1,5 @@
 #!/usr/bin/node
-const axios = require('axios');
+const request = require('request');
 
 // Get the movie ID from the command-line arguments
 const movieId = process.argv[2];
@@ -7,27 +7,34 @@ const movieId = process.argv[2];
 // URL of the Star Wars API for the specified movie
 const apiUrl = `https://swapi-api.alx-tools.com/api/films/${movieId}/`;
 
-async function fetchMovieCharacters () {
-  try {
-    // Fetch movie details
-    const response = await axios.get(apiUrl);
-    const data = response.data;
+function fetchMovieCharacters () {
+  request(apiUrl, (error, response, body) => {
+    if (error) {
+      console.error('Error fetching movie details:', error.message);
+      return;
+    }
 
-    // Fetch and log the names of the characters
-    const characterPromises = data.characters.map(async (url) => {
-      try {
-        const charResponse = await axios.get(url);
-        return charResponse.data.name;
-      } catch (charError) {
-        console.error('Error fetching character:', charError.message);
-      }
+    const data = JSON.parse(body);
+    const characterUrls = data.characters;
+
+    // Iterate through the character URLs and fetch their names
+    characterUrls.forEach((url) => {
+      request(url, (charError, charResponse, charBody) => {
+        if (charError) {
+          console.error('Error fetching character:', charError.message);
+          return;
+        }
+
+        if (charResponse.statusCode !== 200) {
+          console.error(`Failed to fetch character. Status code: ${charResponse.statusCode}`);
+          return;
+        }
+
+        const character = JSON.parse(charBody);
+        console.log(character.name);
+      });
     });
-
-    const characterNames = await Promise.all(characterPromises);
-    characterNames.forEach(name => console.log(name));
-  } catch (error) {
-    console.error('Error fetching movie details:', error.message);
-  }
+  });
 }
 
 fetchMovieCharacters();
