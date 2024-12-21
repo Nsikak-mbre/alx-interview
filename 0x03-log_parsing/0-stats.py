@@ -21,17 +21,21 @@ def main():
     Main function to read stdin and compute metrics.
     """
     total_size = 0
-    status_counts = {200: 0, 301: 0, 400: 0, 401: 0, 403: 0,
-                     404: 0, 405: 0, 500: 0}
+    status_counts = {200: 0, 301: 0, 400: 0, 401: 0, 403: 0, 404: 0, 405: 0, 500: 0}
     line_count = 0
 
     try:
         for line in sys.stdin:
             line = line.strip()
             line_count += 1
+
             try:
-                # Split and parse the line
+                # Split and validate the line format
                 parts = line.split()
+                if len(parts) < 7:  # Minimum required parts for a valid line
+                    raise ValueError("Line does not match the format")
+
+                # Extract file size and status code
                 file_size = int(parts[-1])
                 status_code = int(parts[-2])
 
@@ -42,6 +46,7 @@ def main():
 
             except (ValueError, IndexError):
                 # Skip lines that don't match the format
+                line_count -= 1
                 continue
 
             # Print statistics every 10 lines
